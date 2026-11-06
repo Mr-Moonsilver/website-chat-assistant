@@ -30,6 +30,14 @@ export interface ConfigAssistant {
   cheminDbOpencode?: string;     // défaut $XDG_DATA_HOME/opencode/opencode.db
   inactiviteMs?: number;         // kill après N ms sans progrès (défaut 5 min)
   plafondMs?: number;            // plafond absolu (défaut 30 min)
+  /**
+   * Identité et environnement de `opencode run`. Le modèle ET les outils de
+   * l'agent (bash…) tournent dans ce processus : sans ce réglage il hérite de
+   * l'app (son utilisateur, ses secrets). `prefixe` précède la commande (ex.
+   * ['setpriv', '--reuid=999', '--regid=999', '--clear-groups']) ; `env`
+   * remplace entièrement l'environnement.
+   */
+  processusRun?: { prefixe?: string[]; env?: Record<string, string> };
 }
 
 export interface Conversation {
@@ -277,10 +285,11 @@ export function creerServiceAssistant(cfg: ConfigAssistant) {
 
   function lancerRun(sid: string, texte: string) {
     derniersEchecs.delete(sid);
-    const p = spawn('opencode', ['run', '--session', sid, '--agent', AGENT, '--model', MODELE, texte], {
+    const [commande, ...prefixe] = [...(cfg.processusRun?.prefixe ?? []), 'opencode'];
+    const p = spawn(commande, [...prefixe, 'run', '--session', sid, '--agent', AGENT, '--model', MODELE, texte], {
       cwd: DIR,
       stdio: ['ignore', 'ignore', 'pipe'],
-      env: process.env as Record<string, string>,
+      env: cfg.processusRun?.env ?? (process.env as Record<string, string>),
     });
     let err = '';
     p.stderr.on('data', (d: Buffer) => { err += d; });

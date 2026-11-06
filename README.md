@@ -15,6 +15,11 @@ en lecture seule), fenêtre agrandissable.
 - La lecture se fait **directement dans l'état sqlite d'opencode** (WAL,
   lecture seule) : `opencode export` tronque pendant les runs, et le serveur
   ne voit pas les écritures du CLI.
+- Le run CLI exécute le modèle **et les outils de l'agent** : il hérite par
+  défaut de l'utilisateur et de l'environnement de l'app (base, secrets).
+  Une app dont le chat est ouvert à des comptes non administrateurs le
+  confine avec `processusRun` (`prefixe` setpriv vers un compte dédié, `env`
+  réduit) — voir l'app Budget (`entrypoint.sh`, `src/server/index.ts`).
 - Le CLI enrobe le message argv de guillemets littéraux : le service les
   retire (sinon la question s'affiche en double face à la bulle optimiste).
 - Les tokens n'arrivent dans l'état qu'aux jalons d'étape : le client
